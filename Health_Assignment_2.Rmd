@@ -1,15 +1,22 @@
 ---
-title: "Health_assignment_2"
+title: "Assignment 2: Risk Adjustment "
 author: "Mathijs Lenderink"
 date: '2022-11-06'
 output: pdf_document
 ---
 
-# Assignment 2: Risk Adjustment 
+# Introduction
+This analysis will show how much different variables influence the healthcare costs of an individual.
+My findings in short:
+
+* Increased age category has on average the result that you have more health costs.
+* When you are male you will on average have more health costs.
+* The different income sources have different sized effects on the health costs. 
+* Whether or not you have limited coverage on your insurance has a large effect. When you have limited coverage on your insurance you have on average less health costs compared to someone who has full coverage.
+* Whether or not you live in an unhealthy region also has a large effect on your health costs. When you live in an unhealthy region you have on average more health costs than someone who does not live in an unhealthy region.
 
 
-
-
+# Assignment
 Reading in libraries and data
 ```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -209,10 +216,10 @@ From the estimated coefficients of the final model we can observe the following:
 * Increased age category has on average the result that you have more health costs.
 * When you are male you will on average have 1785 more health costs.
 * The different income sources have different sized effects on the health costs. It can be expected that someone who has unemployment benefits have on average a higher health cost than someone who works and it can be expected that students (often young and healthy) will have lower health costs than people who live on a pension. This reasoning can be seen in the estimated coefficients:
-  *Income_sourcePension:                1445.114 
-  *Income_sourceStudent:                1353.337 
-  *Income_sourceUnemployment Benefits:  1430.392 
-  *Income_sourceWorking:                1365.002 
+  * Income_sourcePension:                1445.114 
+  * Income_sourceStudent:                1353.337 
+  * Income_sourceUnemployment Benefits:  1430.392 
+  * Income_sourceWorking:                1365.002 
 * Whether or not you have limited coverage on your insurance has a large effect. When you have limited coverage on your insurance you have on average 3909.3 less health costs compared to someone who has full coverage.
 * Whether or not you live in an unhealthy region also has a large effect on your health costs. When you live in an unhealthy region you have on average 3862.0 more health costs than someone who does not live in an unhealthy region.
 

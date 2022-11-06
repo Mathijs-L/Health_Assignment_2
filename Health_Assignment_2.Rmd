@@ -11,7 +11,7 @@ output: pdf_document
 
 
 Reading in libraries and data
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ggplot2); theme_set(theme_bw())
 library(patchwork)
@@ -37,6 +37,7 @@ dim(data)
 ```
 
 The data summary shows that we have data of 996.308 people of which we know:
+
 * ID: id of person
 * Gender: gender of person (male/female)
 * Age_category: in which age category the person falls, see below a summary of age categories and distribution of age.
@@ -105,7 +106,7 @@ Gender_dist + Income_dist + Insurer_dist
 ggplot(data = data, aes( x = Age_category_leveled, y = Healthcare_cost, color = Gender))+
   geom_boxplot()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
-  ggtitle("Healthcare cost by age category adn gender")
+  ggtitle("Healthcare cost by age category and gender")
 ```
 This boxplot shows that healthcare costs are increasing over age category and that overall the female healthcare costs are lower than the male healthcare costs. The below line graph shows the difference by gender.
 
@@ -139,16 +140,20 @@ age_index <- seq(20)
 data_age_coeff <- data.frame(age_index, age_coefficients)
 ggplot(data_age_coeff, aes(x = age_index, y = age_coefficients))+
   geom_line()+
-  xlab(names(age_coefficients))
+  ggtitle("Estimated coefficients per age category")
 ```
 
 
 ## A second model based on the ordered age:
 Order_age is a variable ranging from 1 to 24 depending on the age category, the higher the number the higher the age category. a one increase in the Order_age means one higher age category. For msot of the data (except above age 100) this means that a person is in an age class of 5 years higher. See below for a table of Order_age values per Age category.
 ```{r}
-data %>%
+age_table <- data %>%
   group_by(Order_age)%>%
   distinct(Age_category)
+colnames(age_table) <- c("Age_category", "age_index")
+age_table$age_index = age_table$age_index - 1
+age_table <- age_table[0:21,]
+age_table
 ```
 
 
@@ -158,3 +163,117 @@ summary(model2)
 ```
 The outcome of this regression shows that on average when you increase Order_age by 1, so fall in an age category higher, you will have 1032.6 increased health costs.
 The outcome from this regression also shows that you will on average have 926.8 increased health costs when you are male instead of female.
+
+
+To conclude from both regressions the groups that are profitable and the groups that are loss-making:
+
+* Profitable:
+  * Females on average have lower healthcare costs.
+  * Young people under 30 are more profitable (see the coefficients per age category graph above), there is a large jump between age category [25-30] with a value 2737 and age category [30-35] with a value 6141. See the graph for the exact change in coefficient. But it depends on the premium of the indivduals at what age the indivuals become loss-mkaing on average.
+
+* Loss-making:
+  * Males on average have higher healthcare costs.
+  * Older individuals have increased healthcare costs (see the coefficients per age category graph above). Older people are more likely to be loss making.
+
+
+# Model Extension
+
+I will now extend the model using other available data and analyze whether this extra data increases the accuracy of the model.
+```{r}
+summary(model1)
+```
+
+```{r}
+model3 <- lm(Healthcare_cost ~ Age_category_leveled + Gender + Income_source + Limited_coverage + Unhealthy_region + Population_density, data = data)
+summary(model3)
+```
+Population density will be left out of the model as the estimated effect size is very small and the coefficient is not significant. The other variables I will leave in the model, in the appendix summaries can be found on the models with and without the other variables. From those I conclude that model fit (R-squared) and statistical significance are optimal when I leave in all the variables except population density. 
+The other added variables do seem to have a significant effect on the health costs based on the estimated coefficients and the statistical significance of these coefficients. 
+Another important measure to check whether the model has become more accurate with the added variables is the value of the R-squared of the model.
+Compared to the model without the added variables we see an increase in the R-squared.
+R-squared value of the basic age and gender model: 0.6076
+R-squared value of the model with added variables: 0.6852
+
+
+When we remove the population density variable from the model we are left with the following model:
+```{r}
+model4 <- lm(Healthcare_cost ~ Age_category_leveled + Gender + Income_source + Limited_coverage + Unhealthy_region , data = data)
+summary(model4)
+```
+Compared to the previous model the R-squared has not changed, which also indicates that the population density did not add accuracy to the model.
+
+
+## Model analysis
+From the estimated coefficients of the final model we can observe the following:
+
+* Increased age category has on average the result that you have more health costs.
+* When you are male you will on average have 1785 more health costs.
+* The different income sources have different sized effects on the health costs. It can be expected that someone who has unemployment benefits have on average a higher health cost than someone who works and it can be expected that students (often young and healthy) will have lower health costs than people who live on a pension. This reasoning can be seen in the estimated coefficients:
+  *Income_sourcePension:                1445.114 
+  *Income_sourceStudent:                1353.337 
+  *Income_sourceUnemployment Benefits:  1430.392 
+  *Income_sourceWorking:                1365.002 
+* Whether or not you have limited coverage on your insurance has a large effect. When you have limited coverage on your insurance you have on average 3909.3 less health costs compared to someone who has full coverage.
+* Whether or not you live in an unhealthy region also has a large effect on your health costs. When you live in an unhealthy region you have on average 3862.0 more health costs than someone who does not live in an unhealthy region.
+
+
+
+# Further analysis using graphs
+As we concluded above the individuals who are in the category [30-35] and above have a much higher health cost than those younger than them. So for analysis I split this group in two where one group is everyone under 30 and one group is everyone above 30. In the grpah below this shows that I will include everyone up to the green line.
+
+```{r}
+data$IsYoung <- ifelse(data$Order_age <= 6, 1, 0)
+```
+
+
+```{r}
+ggplot(data_age_coeff, aes(x = age_index, y = age_coefficients))+
+  geom_line()+
+  ggtitle("Estimated coefficients per age category")+
+  geom_vline(xintercept = 5.5, colour = 'green')
+
+ggplot(data = data, aes( x = Age_category_leveled, fill = as.factor(IsYoung)))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of Age by gender")
+
+
+
+```
+
+Using this split I can now visualize which insurer has the most profitable individuals.
+
+```{r}
+ggplot(data = data, aes( x = Insurer, fill = as.factor(IsYoung)))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of Age by gender")
+```
+
+
+```{r}
+data%>%
+  group_by(Insurer)%>%
+  summarise_at(vars(IsYoung), funs(mean(.)))
+```
+
+From this analysis we can observe that Insurer E has the highest share of people under 30, namely 23.9%. However the percentages between insurers do not differ much. The lowest percentage is 23.67%, while the highest (from insurer E) is 23.91%
+
+
+# Appendix
+```{r}
+model_A1 <- lm(Healthcare_cost ~ Age_category_leveled + Gender  + Limited_coverage + Unhealthy_region + Population_density, data = data)
+summary(model_A1)
+```
+```{r}
+model_A2 <- lm(Healthcare_cost ~ Age_category_leveled + Gender + Income_source  + Unhealthy_region + Population_density, data = data)
+summary(model_A2)
+```
+```{r}
+model_A3 <- lm(Healthcare_cost ~ Age_category_leveled + Gender + Income_source + Limited_coverage  + Population_density, data = data)
+summary(model_A3)
+```
+```{r}
+model_A4 <- lm(Healthcare_cost ~ Age_category_leveled + Gender + Income_source + Limited_coverage + Unhealthy_region , data = data)
+summary(model_A4)
+```

@@ -1,0 +1,127 @@
+---
+title: "Health_assignment_2"
+author: "Mathijs Lenderink"
+date: '2022-11-06'
+output: pdf_document
+---
+
+# Assignment 2: Risk Adjustment 
+
+
+
+
+Reading in libraries and data
+```{r}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(patchwork)
+```
+
+```{r}
+data <- read.csv('data_assignment2.csv', sep = ',')
+```
+
+# Exploratory data analysis
+```{r}
+head(data)
+```
+Before I summarize the data I first set the categorical variables to categorical data type.
+```{r}
+categorical_cols <- c("Gender", "Age_category", "Insurer", "Income_source")
+data[categorical_cols] <- lapply(data[categorical_cols], factor)
+summary(data)
+```
+```{r}
+dim(data)
+```
+
+The data summary shows that we have data of 996.308 people of which we know:
+* ID: id of person
+* Gender: gender of person (male/female)
+* Age_category: in which age category the person falls, see below a summary of age categories and distribution of age.
+* Order_age: the age_category ordered from low to high
+* Insurer: Which insurer the person has
+* Income_source: the source of income
+* Limited_coverage: whether the person has limited coverage (yes/no)
+* Unhealthy_region: whether the person lives in an unhealthy region (yes/no)
+* Healthcare_cost: The healthcare cost 
+* Population_density: how densely populated the area where the person lives is measured on a scale of 1 to 5
+
+To check whether there are missing values:
+```{r}
+sapply(data, function(x) sum(is.na(x)))
+```
+There are no missing values.
+
+For visualization and clarity purposes i set the age_category levels to increasing categories starting from category [0,5]
+```{r}
+age_levels <- c( "[0,5]", "(5,10]","(10,15]", "(15,20]", "(20,25]", "(25,30]", "(30,35]", "(35,40]", 
+"(40,45]", "(45,50]",  "(50,55]", "(55,60]", "(60,65]", 
+"(65,70]", "(70,75]", "(75,80]", "(80,85]", "(85,90]", "(90,95]", 
+"(95,100]", "100+")
+data$Age_category <- factor(data$Age_category, levels = age_levels)
+```
+
+
+
+# Data visualisation
+## Basic graphs
+```{r}
+ggplot(data = data, aes( x = Age_category))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of Age")
+```
+
+```{r}
+Gender_dist <- ggplot(data = data, aes( x = Gender))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of Gender")
+```
+
+```{r}
+Income_dist <- ggplot(data = data, aes( x = Income_source))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of Income_source")
+```
+
+```{r}
+Insurer_dist <- ggplot(data = data, aes( x = Insurer))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of Income_source")
+```
+
+```{r}
+Gender_dist + Income_dist + Insurer_dist
+```
+
+
+## Exploratory Graphs
+```{r}
+ggplot(data = data, aes( x = Age_category, y = Healthcare_cost, color = Gender))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Healthcare cost by age category adn gender")
+```
+This boxplot shows that healthcare costs are increasing over age category and that overall the female healthcare costs are lower than the male healthcare costs. The below line graph shows the difference by gender.
+
+
+```{r}
+ggplot(data = data, aes( x = Age_category, y = Healthcare_cost, colour = Gender))+
+  stat_summary(aes(y = Healthcare_cost, group = Gender), fun.y = mean, geom = "line")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Healthcare cost by age category and gender")
+```
+
+```{r}
+ggplot(data = data, aes( x = Age_category, fill = Gender))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of Age by gender")
+```
+In the graph above we can see that the share of males in the youngest categories is very large, also in the oldest categories this difference can be observed.
+
+

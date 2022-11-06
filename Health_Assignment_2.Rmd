@@ -15,6 +15,7 @@ Reading in libraries and data
 library(tidyverse)
 library(ggplot2); theme_set(theme_bw())
 library(patchwork)
+library(mlogit)
 ```
 
 ```{r}
@@ -59,7 +60,7 @@ age_levels <- c( "[0,5]", "(5,10]","(10,15]", "(15,20]", "(20,25]", "(25,30]", "
 "(40,45]", "(45,50]",  "(50,55]", "(55,60]", "(60,65]", 
 "(65,70]", "(70,75]", "(75,80]", "(80,85]", "(85,90]", "(90,95]", 
 "(95,100]", "100+")
-data$Age_category <- factor(data$Age_category, levels = age_levels)
+data$Age_category_leveled <- factor(data$Age_category, levels = age_levels)
 ```
 
 
@@ -67,7 +68,7 @@ data$Age_category <- factor(data$Age_category, levels = age_levels)
 # Data visualisation
 ## Basic graphs
 ```{r}
-ggplot(data = data, aes( x = Age_category))+
+ggplot(data = data, aes( x = Age_category_leveled))+
   geom_bar()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
   ggtitle("Distribution of Age")
@@ -101,7 +102,7 @@ Gender_dist + Income_dist + Insurer_dist
 
 ## Exploratory Graphs
 ```{r}
-ggplot(data = data, aes( x = Age_category, y = Healthcare_cost, color = Gender))+
+ggplot(data = data, aes( x = Age_category_leveled, y = Healthcare_cost, color = Gender))+
   geom_boxplot()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
   ggtitle("Healthcare cost by age category adn gender")
@@ -110,18 +111,50 @@ This boxplot shows that healthcare costs are increasing over age category and th
 
 
 ```{r}
-ggplot(data = data, aes( x = Age_category, y = Healthcare_cost, colour = Gender))+
+ggplot(data = data, aes( x = Age_category_leveled, y = Healthcare_cost, colour = Gender))+
   stat_summary(aes(y = Healthcare_cost, group = Gender), fun.y = mean, geom = "line")+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
   ggtitle("Healthcare cost by age category and gender")
 ```
 
 ```{r}
-ggplot(data = data, aes( x = Age_category, fill = Gender))+
+ggplot(data = data, aes( x = Age_category_leveled, fill = Gender))+
   geom_bar()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
   ggtitle("Distribution of Age by gender")
 ```
 In the graph above we can see that the share of males in the youngest categories is very large, also in the oldest categories this difference can be observed.
 
+# Estimating model based on Age and Gender
 
+```{r}
+model1 <- lm(Healthcare_cost ~ Age_category_leveled + Gender, data = data)
+summary(model1)
+
+```
+The simple model with age and gender above shows that, just like in the graphs, the costly individuals are older individuals and males in general. Males have on average 1780 more healthcost. The older the individual the more healthcosts you will on average have, this can be observed from the increasing coefficient of the age_categories. The older the category the higher the coefficient estimate of the age_category, meaning that on average an individual will have higher health costs when they fall in a higher age category.
+```{r}
+age_coefficients <- model1$coefficients[2:21]
+age_index <- seq(20)
+data_age_coeff <- data.frame(age_index, age_coefficients)
+ggplot(data_age_coeff, aes(x = age_index, y = age_coefficients))+
+  geom_line()+
+  xlab(names(age_coefficients))
+```
+
+
+## A second model based on the ordered age:
+Order_age is a variable ranging from 1 to 24 depending on the age category, the higher the number the higher the age category. a one increase in the Order_age means one higher age category. For msot of the data (except above age 100) this means that a person is in an age class of 5 years higher. See below for a table of Order_age values per Age category.
+```{r}
+data %>%
+  group_by(Order_age)%>%
+  distinct(Age_category)
+```
+
+
+```{r}
+model2 <- lm(Healthcare_cost ~ Order_age + Gender, data = data)
+summary(model2)
+```
+The outcome of this regression shows that on average when you increase Order_age by 1, so fall in an age category higher, you will have 1032.6 increased health costs.
+The outcome from this regression also shows that you will on average have 926.8 increased health costs when you are male instead of female.

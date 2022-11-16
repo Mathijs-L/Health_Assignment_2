@@ -96,16 +96,58 @@ Income_dist <- ggplot(data = data, aes( x = Income_source))+
   ggtitle("Distribution of Income_source")
 ```
 
+
+
+```{r}
+Gender_dist + Income_dist
+```
 ```{r}
 Insurer_dist <- ggplot(data = data, aes( x = Insurer))+
   geom_bar()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
-  ggtitle("Distribution of Income_source")
+  ggtitle("Distribution of people over insurers")
 ```
 
 ```{r}
-Gender_dist + Income_dist + Insurer_dist
+mean_cost_insurer <- ggplot(data )+
+  geom_bar(aes( x = Insurer, y = Healthcare_cost ),stat = "summary", fun.y = "mean")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of average health cost epr isnurer")
+
+
 ```
+
+```{r}
+Insurer_dist + mean_cost_insurer
+```
+The above graphs show that insurer A,B,C,D all have the same average costs. However insurer E has a higher cost than the rest. This can be explained by the small market power (and number of insured) Insurer E has.
+
+## Basic numbers
+
+```{r}
+data%>%
+  group_by(Insurer)%>%
+  summarise_at(vars(Limited_coverage), funs(mean(.)))
+```
+These results show that each insurer has around the same share of people who have limited coverage, all have around 7%.
+
+
+```{r}
+data%>%
+  group_by(Insurer)%>%
+  summarise_at(vars(Unhealthy_region), funs(mean(.)))
+```
+These results show that the number of people who live in an unhealthy region as a share per insurer is quite balanced. Each insurer has around 15% which live in an unhealthy region.
+
+
+```{r}
+data%>%
+  group_by(Limited_coverage)%>%
+  summarise_at(vars(Healthcare_cost), funs(mean(.)))
+```
+These results show that the mean healthcare costs of people with limited coverage are 0 and the mean healthcare costs of people without limited coverage is 8763.
+
+
 
 
 ## Exploratory Graphs
@@ -118,12 +160,62 @@ ggplot(data = data, aes( x = Age_category_leveled, y = Healthcare_cost, color = 
 This boxplot shows that healthcare costs are increasing over age category and that overall the female healthcare costs are lower than the male healthcare costs. The below line graph shows the difference by gender.
 
 
+
+The below graph shows that most of the people who have limited coverage are in the younger age groups. Up to the age group of 15 it can be expected that people do not have limited coverage as they probably fall under full coverage fo the government (such as the case in the Netherlands).
+```{r}
+ggplot(data = data, aes( x = Age_category_leveled, fill = as.factor(Limited_coverage)))+
+  geom_bar()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Distribution of Age by gender color by limited coverage")
+```
+
+
+The below graph shows that the distribution of people who are with a certain insurer does not change over age categories.
+```{r}
+ggplot(data = data, aes( x = Age_category_leveled, fill = as.factor(Insurer)))+
+  geom_bar(position = "fill")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Percetage of insured per Insurer per Age category")
+```
+
+The Below graph shows that the percentage of people who liv ein an unhealthy region does not change over age categories.
+```{r}
+ggplot(data = data, aes( x = Age_category_leveled, fill = as.factor(Unhealthy_region)))+
+  geom_bar(position = "fill")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Percentage of people who live in an unhealthy region per age category")
+```
+
+
+
+
+
+This graph shows that on average over all age groups the male healthcare costs are higher.
 ```{r}
 ggplot(data = data, aes( x = Age_category_leveled, y = Healthcare_cost, colour = Gender))+
   stat_summary(aes(y = Healthcare_cost, group = Gender), fun.y = mean, geom = "line")+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
   ggtitle("Healthcare cost by age category and gender")
 ```
+
+This graph shows that people who live in an unhealthy region have on average per age category higher healthcare costs.
+```{r}
+ggplot(data = data, aes( x = Age_category_leveled, y = Healthcare_cost, colour = as.factor(Unhealthy_region)))+
+  stat_summary(aes(y = Healthcare_cost, group = as.factor(Unhealthy_region)), fun.y = mean, geom = "line")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Healthcare cost by age category and Unhealthy region")
+```
+
+This graph shows that people with limited coverage have no healthcare costs.
+```{r}
+ggplot(data = data, aes( x = Age_category_leveled, y = Healthcare_cost, colour = as.factor(Limited_coverage)))+
+  stat_summary(aes(y = Healthcare_cost, group = as.factor(Limited_coverage)), fun.y = mean, geom = "line")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  ggtitle("Healthcare cost by age category and limited coverage")
+```
+
+
+
 
 ```{r}
 ggplot(data = data, aes( x = Age_category_leveled, fill = Gender))+
@@ -152,7 +244,7 @@ ggplot(data_age_coeff, aes(x = age_index, y = age_coefficients))+
 
 
 ## A second model based on the ordered age:
-Order_age is a variable ranging from 1 to 24 depending on the age category, the higher the number the higher the age category. a one increase in the Order_age means one higher age category. For msot of the data (except above age 100) this means that a person is in an age class of 5 years higher. See below for a table of Order_age values per Age category.
+Order_age is a variable ranging from 1 to 24 depending on the age category, the higher the number the higher the age category. a one increase in the Order_age means one higher age category. For most of the data (except above age 100) this means that a person is in an age class of 5 years higher. See below for a table of Order_age values per Age category.
 ```{r}
 age_table <- data %>%
   group_by(Order_age)%>%
@@ -172,11 +264,11 @@ The outcome of this regression shows that on average when you increase Order_age
 The outcome from this regression also shows that you will on average have 926.8 increased health costs when you are male instead of female.
 
 
-To conclude from both regressions the groups that are profitable and the groups that are loss-making:
+To conclude from both regressions the groups that are likely to be profitable and the groups that are likely to be loss-making:
 
 * Profitable:
   * Females on average have lower healthcare costs.
-  * Young people under 30 are more profitable (see the coefficients per age category graph above), there is a large jump between age category [25-30] with a value 2737 and age category [30-35] with a value 6141. See the graph for the exact change in coefficient. But it depends on the premium of the indivduals at what age the indivuals become loss-mkaing on average.
+  * The older people are the more the healthcare costs. To get insight in how this changes over time I have plotted the coefficients in the graph above. There is a large jump between age category [25-30] with a value 2737 and age category [30-35] with a value 6141. See the graph for the exact change in coefficient. But it depends on the premium of the individuals at what age the individuals become loss-making on average.
 
 * Loss-making:
   * Males on average have higher healthcare costs.
@@ -242,7 +334,7 @@ ggplot(data_age_coeff, aes(x = age_index, y = age_coefficients))+
 ggplot(data = data, aes( x = Age_category_leveled, fill = as.factor(IsYoung)))+
   geom_bar()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
-  ggtitle("Distribution of Age by gender")
+  ggtitle("Distribution of Age")
 
 
 
@@ -254,7 +346,7 @@ Using this split I can now visualize which insurer has the most profitable indiv
 ggplot(data = data, aes( x = Insurer, fill = as.factor(IsYoung)))+
   geom_bar()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
-  ggtitle("Distribution of Age by gender")
+  ggtitle("Distribution of people over the insurers")
 ```
 
 

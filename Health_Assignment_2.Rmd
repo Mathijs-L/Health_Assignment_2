@@ -110,7 +110,7 @@ Insurer_dist <- ggplot(data = data, aes( x = Insurer))+
 
 ```{r}
 mean_cost_insurer <- ggplot(data )+
-  geom_bar(aes( x = Insurer, y = Healthcare_cost ),stat = "summary", fun.y = "mean")+
+  geom_bar(aes( x = Gender, y = Healthcare_cost ),stat = "summary", fun.y = "mean")+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
   ggtitle("Distribution of average health cost epr isnurer")
 
@@ -175,7 +175,7 @@ The below graph shows that the distribution of people who are with a certain ins
 ggplot(data = data, aes( x = Age_category_leveled, fill = as.factor(Insurer)))+
   geom_bar(position = "fill")+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
-  ggtitle("Percetage of insured per Insurer per Age category")
+  ggtitle("Percentage of insured per Insurer per Age category")
 ```
 
 The Below graph shows that the percentage of people who liv ein an unhealthy region does not change over age categories.
@@ -240,6 +240,30 @@ data_age_coeff <- data.frame(age_index, age_coefficients)
 ggplot(data_age_coeff, aes(x = age_index, y = age_coefficients))+
   geom_line()+
   ggtitle("Estimated coefficients per age category")
+```
+
+## SImple model with split gender per age category
+
+Below I create a model where each age category is also split by gender to see whether the gender costs coefficietn change over age categories. (Here I set the intercept to 0 to make the coefficients positive)
+
+```{r}
+model_Split_gender <- lm(Healthcare_cost ~ (Age_category_leveled:Gender) -1, data = data)
+summary(model_Split_gender)
+
+```
+
+The coefficients show that there is a difference between genders and that there is an increasing trend over age categories, meaning that just as in the graph above the health costs are increasing the older someone is. To make visible the difference between gender per age category I again plotted the coefficients below, but then split per gender. The graph shows the same trend as the earlier graph on average health costs shows above (see the graph with title: Healthcare cost by age category and gender).
+
+```{r}
+age_coefficients_female <- model_Split_gender$coefficients[2:21]
+age_coefficients_male <- model_Split_gender$coefficients[23:42]
+age_index <- seq(20)
+data_age_coeff_gender <- data.frame(age_index, age_coefficients_female, age_coefficients_male)
+data_age_coeff_gender_long <- pivot_longer(data_age_coeff_gender, cols = c(age_coefficients_female, age_coefficients_male), names_to = "Source", values_to = "Value")
+
+ggplot(data_age_coeff_gender_long, aes(x = age_index, y = Value, color = Source))+
+  geom_line()+
+  ggtitle("Estimated coefficients per age category per gender")
 ```
 
 
